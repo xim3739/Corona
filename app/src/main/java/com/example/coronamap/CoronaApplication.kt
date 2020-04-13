@@ -1,21 +1,19 @@
 package com.example.coronamap
 
 import android.app.Application
-import io.realm.Realm
-import io.realm.RealmConfiguration
+import com.example.coronamap.migration.MigrationManager
+import io.realm.*
 
 class CoronaApplication: Application() {
-    override fun onCreate() {
-        super.onCreate()
-
-        configureRealm()
+    companion object {
+        lateinit var shared: CoronaApplication
+            private set
     }
 
-    private fun configureRealm() {
+    override fun onCreate() {
+        super.onCreate()
+        shared = this
         Realm.init(this)
-        val config = RealmConfiguration.Builder()
-                .deleteRealmIfMigrationNeeded()
-                .build()
-        Realm.setDefaultConfiguration(config)
+        MigrationManager.migration()
     }
 }

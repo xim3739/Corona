@@ -1,18 +1,17 @@
-package com.example.coronamap.MainKT
+package com.example.coronamap.main
 
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
 import com.example.coronamap.R
 
-import com.example.coronamap.VO.CoronaMapModel
+import com.example.coronamap.model.CoronaMapModel
 
 import net.daum.mf.map.api.MapPOIItem
 import net.daum.mf.map.api.MapView
@@ -21,20 +20,16 @@ import net.daum.mf.map.api.MapPoint
 import java.security.MessageDigest
 
 import io.realm.Realm
-import io.realm.RealmConfiguration
-import io.realm.RealmModel
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection.HTTP_OK
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
-import kotlin.coroutines.suspendCoroutine
 
 
 class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.POIItemEventListener {
@@ -77,8 +72,8 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
 
         val pois = results.mapNotNull {
             //더블로 변환 , 못하면 널 리턴
-            val latitude = it.locationX.toDoubleOrNull() ?: return@mapNotNull null
-            val longitude = it.locationY.toDoubleOrNull() ?: return@mapNotNull null
+            val latitude = it.locationX ?: return@mapNotNull null
+            val longitude = it.locationY ?: return@mapNotNull null
             val address = it.keyword
             //apply 는? apply
             MapPOIItem().apply {
@@ -281,8 +276,8 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
             val nextId = if (maxId == null) 1 else maxId.toInt() + 1
 
             coronaMapModel = realm.createObject<CoronaMapModel>(CoronaMapModel::class.java, nextId)
-            coronaMapModel?.locationX = latitude.toString()
-            coronaMapModel?.locationY = longitude.toString()
+            coronaMapModel?.locationX = latitude
+            coronaMapModel?.locationY = longitude
             coronaMapModel?.keyword = address
         }
         GlobalScope.launch(Dispatchers.Main) {
