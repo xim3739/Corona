@@ -16,4 +16,5 @@ open class CoronaMapModel : RealmObject() {
 
     var keyword: String? = null
     var cityName: String? = null
+
 }
