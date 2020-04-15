@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
-import com.example.coronamap.R
 import com.example.coronamap.data.LocationData
 import com.example.coronamap.model.CoronaLocationModel
 
@@ -30,6 +29,16 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection.HTTP_OK
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
+import androidx.coordinatorlayout.widget.CoordinatorLayout.Behavior.setTag
+import net.daum.mf.map.api.MapPoint
+import net.daum.mf.map.api.MapCircle
+import androidx.core.app.ComponentActivity
+import androidx.core.app.ComponentActivity.ExtraData
+import androidx.core.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import android.R
+
+
 
 
 class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.POIItemEventListener {
@@ -52,7 +61,7 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(com.example.coronamap.R.layout.activity_main)
 
         /**
          * 해쉬 키 캆 얻기
@@ -66,7 +75,6 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
 
         updateCircle()
         updateMarker()
-
     }
 
     private fun updateCircle() {
@@ -78,15 +86,21 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
                 val longitude = it.locationY ?: return@mapNotNull null
                 mapCircleList.add(MapCircle(
                         MapPoint.mapPointWithGeoCoord(latitude,longitude),
-                        300,
+                        10000,
                         Color.argb(30,30,30,30),
                         Color.argb(128, 255, 0, 0)
                 ))
             }
         }
+        val mapPointBoundsArray: Array<MapPointBounds> = Array(mapCircleList.size, {MapPointBounds()})
         for(i in 0 until mapCircleList.size) {
             mapView.addCircle(mapCircleList[i])
+            mapPointBoundsArray[i] = mapCircleList[i].bound
         }
+        val padding = 50
+        val mapPointBounds = MapPointBounds(mapPointBoundsArray)
+        mapView.moveCamera(CameraUpdateFactory.newMapPointBounds(mapPointBounds, padding))
+
     }
 
     /**
