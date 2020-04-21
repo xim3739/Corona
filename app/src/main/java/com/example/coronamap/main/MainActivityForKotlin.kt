@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
-import android.util.Base64
 import android.util.Log
 import android.widget.Toast
 import com.example.coronamap.data.LocationData
@@ -29,22 +28,18 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection.HTTP_OK
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
-import androidx.coordinatorlayout.widget.CoordinatorLayout.Behavior.setTag
 import net.daum.mf.map.api.MapPoint
 import net.daum.mf.map.api.MapCircle
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.R
+import android.widget.Button
+import com.example.coronamap.R
 
-
-
-
-class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.POIItemEventListener {
+class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.POIItemEventListener, MapView.CurrentLocationEventListener {
     private val locationDataForCorona = LocationData.getData()
     private val results by lazy { Realm.getDefaultInstance().where(CoronaMapModel::class.java).findAll() }
     private val locationDataResult by lazy { Realm.getDefaultInstance().where(CoronaLocationModel::class.java).findAll() }
+    private val currentLocationButton by lazy { findViewById<Button>(R.id.currentLocationButton) }
+    private val removeCircleButton by lazy { findViewById<Button>(R.id.removeCircleButton) }
+    private val refreshButton by lazy { findViewById<Button>(R.id.refreshButton) }
 
     private val mapView by lazy {
         val mapView = MapView(this)
@@ -61,8 +56,7 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(com.example.coronamap.R.layout.activity_main)
-
+        setContentView(R.layout.activity_main)
         /**
          * 해쉬 키 캆 얻기
          */
@@ -75,6 +69,48 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
 
         updateCircle()
         updateMarker()
+
+        currentLocationButton.setOnClickListener {
+            getUserLocation()
+        }
+
+        removeCircleButton.setOnClickListener {
+            removeCircle()
+        }
+
+        refreshButton.setOnClickListener {
+            updateCircle()
+            updateMarker()
+        }
+    }
+
+    private fun getUserLocation() {
+        mapView.currentLocationTrackingMode
+    }
+
+    private fun removeCircle() {
+        if(locationDataResult.isEmpty()) return
+        val mapCircleList = arrayListOf<MapCircle>()
+        for(i in 0 until locationDataResult.size) {
+            val mapPoint = locationDataResult.mapNotNull {
+                val latitude = it.locationX ?: return@mapNotNull null
+                val longitude = it.locationY ?: return@mapNotNull null
+                mapCircleList.remove(MapCircle(
+                        MapPoint.mapPointWithGeoCoord(latitude,longitude),
+                        10000,
+                        Color.argb(30,30,30,30),
+                        Color.argb(128, 255, 0, 0)
+                ))
+            }
+        }
+        val mapPointBoundsArray: Array<MapPointBounds> = Array(mapCircleList.size, { MapPointBounds() })
+        for(i in 0 until mapCircleList.size) {
+            mapView.addCircle(mapCircleList[i])
+            mapPointBoundsArray[i] = mapCircleList[i].bound
+        }
+        val padding = 50
+        val mapPointBounds = MapPointBounds(mapPointBoundsArray)
+        mapView.moveCamera(CameraUpdateFactory.newMapPointBounds(mapPointBounds, padding))
     }
 
     private fun updateCircle() {
@@ -92,7 +128,7 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
                 ))
             }
         }
-        val mapPointBoundsArray: Array<MapPointBounds> = Array(mapCircleList.size, {MapPointBounds()})
+        val mapPointBoundsArray: Array<MapPointBounds> = Array(mapCircleList.size, { MapPointBounds() })
         for(i in 0 until mapCircleList.size) {
             mapView.addCircle(mapCircleList[i])
             mapPointBoundsArray[i] = mapCircleList[i].bound
@@ -262,6 +298,30 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
     override fun onCalloutBalloonOfPOIItemTouched(mapView: MapView, mapPOIItem: MapPOIItem, calloutBalloonButtonType: MapPOIItem.CalloutBalloonButtonType) {}
     override fun onDraggablePOIItemMoved(mapView: MapView, mapPOIItem: MapPOIItem, mapPoint: MapPoint) {}
 
+    override fun onCurrentLocationUpdateFailed(p0: MapView?) {
+        Toast.makeText(applicationContext, "tracking failed", Toast.LENGTH_LONG)
+    }
+
+    override fun onCurrentLocationUpdate(p0: MapView?, p1: MapPoint?, p2: Float) {
+        var latitude: Double = p1?.mapPointGeoCoord?.latitude ?: 0.0
+        var longitude: Double = p1?.mapPointGeoCoord?.longitude ?: 0.0
+        val mapPoint = MapPOIItem().apply {
+            itemName = "currentLocation"
+            tag = 0
+            mapPoint = MapPoint.mapPointWithGeoCoord(latitude, longitude)
+            markerType = MapPOIItem.MarkerType.RedPin
+        }
+        mapView.addPOIItem(mapPoint)
+    }
+
+    override fun onCurrentLocationUpdateCancelled(p0: MapView?) {
+        Toast.makeText(applicationContext, "tracking cancel", Toast.LENGTH_LONG)
+    }
+
+    override fun onCurrentLocationDeviceHeadingUpdate(p0: MapView?, p1: Float) {
+        Toast.makeText(applicationContext, "heading start", Toast.LENGTH_LONG)
+    }
+
     /***************
      * API 를 위한 키 값 얻어오는 함수
      */
@@ -281,8 +341,8 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
             e.printStackTrace()
         }
     }
-    //
-//    class SaveTask : AsyncTask<Any, Void, MainActivity>() {
+
+    //    class SaveTask : AsyncTask<Any, Void, MainActivity>() {
 //        override fun doInBackground(vararg params: Any?): MainActivity {
 //            val latitude = params[0] as Double
 //            val longitude = params[1] as Double
@@ -365,7 +425,6 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
 //            return builder
 //        }
 //    }
-
 }
 
 
