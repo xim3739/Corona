@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
     private val currentLocationButton by lazy { findViewById<Button>(R.id.currentLocationButton) }
     private val removeCircleButton by lazy { findViewById<Button>(R.id.removeCircleButton) }
     private val refreshButton by lazy { findViewById<Button>(R.id.refreshButton) }
+    private var userMapPointItem: MapPOIItem? = null
 
     private val mapView by lazy {
         val mapView = MapView(this)
@@ -71,7 +72,7 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
         updateMarker()
 
         currentLocationButton.setOnClickListener {
-            getUserLocation()
+            trackingUserLocation()
         }
 
         removeCircleButton.setOnClickListener {
@@ -84,7 +85,7 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
         }
     }
 
-    private fun getUserLocation() {
+    private fun trackingUserLocation() {
         mapView.currentLocationTrackingMode
     }
 
@@ -298,29 +299,25 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
     override fun onCalloutBalloonOfPOIItemTouched(mapView: MapView, mapPOIItem: MapPOIItem, calloutBalloonButtonType: MapPOIItem.CalloutBalloonButtonType) {}
     override fun onDraggablePOIItemMoved(mapView: MapView, mapPOIItem: MapPOIItem, mapPoint: MapPoint) {}
 
-    override fun onCurrentLocationUpdateFailed(p0: MapView?) {
-        Toast.makeText(applicationContext, "tracking failed", Toast.LENGTH_LONG)
-    }
-
     override fun onCurrentLocationUpdate(p0: MapView?, p1: MapPoint?, p2: Float) {
         var latitude: Double = p1?.mapPointGeoCoord?.latitude ?: 0.0
         var longitude: Double = p1?.mapPointGeoCoord?.longitude ?: 0.0
-        val mapPoint = MapPOIItem().apply {
+
+        userMapPointItem?.let { mapView.removePOIItem(it) }
+
+        userMapPointItem = MapPOIItem().apply {
             itemName = "currentLocation"
             tag = 0
             mapPoint = MapPoint.mapPointWithGeoCoord(latitude, longitude)
             markerType = MapPOIItem.MarkerType.RedPin
         }
-        mapView.addPOIItem(mapPoint)
+        mapView.setMapCenterPoint(p1, true)
+        mapView.setZoomLevel(5, true)
+        mapView.addPOIItem(userMapPointItem)
     }
-
-    override fun onCurrentLocationUpdateCancelled(p0: MapView?) {
-        Toast.makeText(applicationContext, "tracking cancel", Toast.LENGTH_LONG)
-    }
-
-    override fun onCurrentLocationDeviceHeadingUpdate(p0: MapView?, p1: Float) {
-        Toast.makeText(applicationContext, "heading start", Toast.LENGTH_LONG)
-    }
+    override fun onCurrentLocationUpdateFailed(p0: MapView?) { Toast.makeText(applicationContext, "tracking failed", Toast.LENGTH_LONG) }
+    override fun onCurrentLocationUpdateCancelled(p0: MapView?) { Toast.makeText(applicationContext, "tracking cancel", Toast.LENGTH_LONG) }
+    override fun onCurrentLocationDeviceHeadingUpdate(p0: MapView?, p1: Float) { Toast.makeText(applicationContext, "heading start", Toast.LENGTH_LONG) }
 
     /***************
      * API 를 위한 키 값 얻어오는 함수
