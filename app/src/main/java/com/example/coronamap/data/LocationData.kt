@@ -18,7 +18,12 @@ import javax.net.ssl.HttpsURLConnection
 
 object LocationData {
 
-    val locations: ArrayList<String> = arrayListOf("busan", "chungbuk", "chungnam", "daegu", "daejeon", "gangwon", "gwangju", "gyeongbuk", "gyeonggi", "gyeongnam", "incheon", "jeju", "jeonbuk", "jeonnam", "sejong", "seoul", "ulsan")
+    val locations: ArrayList<String> = arrayListOf(
+            "busan", "chungbuk", "chungnam", "daegu",
+            "daejeon", "gangwon", "gwangju", "gyeongbuk",
+            "gyeonggi", "gyeongnam", "incheon", "jeju",
+            "jeonbuk", "jeonnam", "sejong", "seoul", "ulsan")
+
     val locationsForXandY: Map<Int, ArrayList<Double>> = mapOf(
             Pair(0, arrayListOf(35.17944, 129.07556)),
             Pair(1, arrayListOf(36.64389, 127.48944)),
@@ -37,10 +42,11 @@ object LocationData {
             Pair(14, arrayListOf(36.48750, 127.28167)),
             Pair(15, arrayListOf(37.56667, 126.97806)),
             Pair(16, arrayListOf(35.53889, 129.31667)))
-    val certifiedList: ArrayList<Int> = arrayListOf()
-    val deIsolatedList: ArrayList<Int> = arrayListOf()
-    val deadList: ArrayList<Int> = arrayListOf()
-    val percentageList: ArrayList<Float> = arrayListOf()
+
+    private val certifiedList: ArrayList<Int> = arrayListOf()
+    private val deIsolatedList: ArrayList<Int> = arrayListOf()
+    private val deadList: ArrayList<Int> = arrayListOf()
+    private val percentageList: ArrayList<Float> = arrayListOf()
 
 
     fun getData() {

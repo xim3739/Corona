@@ -84,7 +84,7 @@ enum class MigrationVersion {
         }
     },
     Last { //7
-        override fun migrate(dynamicRealm: DynamicRealm) {}
+        override fun migrate(dynamicRealm: DynamicRealm) { }
     };
 
     abstract fun migrate(dynamicRealm: DynamicRealm)

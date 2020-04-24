@@ -58,18 +58,10 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        /**
-         * 해쉬 키 캆 얻기
-         */
+
         //getHash();
 
-        /**
-         * MapView 기본 세팅
-         */
         map_view.addView(mapView)
-
-        updateCircle()
-        updateMarker()
 
         currentLocationButton.setOnClickListener {
             trackingUserLocation()
@@ -90,28 +82,7 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
     }
 
     private fun removeCircle() {
-        if(locationDataResult.isEmpty()) return
-        val mapCircleList = arrayListOf<MapCircle>()
-        for(i in 0 until locationDataResult.size) {
-            val mapPoint = locationDataResult.mapNotNull {
-                val latitude = it.locationX ?: return@mapNotNull null
-                val longitude = it.locationY ?: return@mapNotNull null
-                mapCircleList.remove(MapCircle(
-                        MapPoint.mapPointWithGeoCoord(latitude,longitude),
-                        10000,
-                        Color.argb(30,30,30,30),
-                        Color.argb(128, 255, 0, 0)
-                ))
-            }
-        }
-        val mapPointBoundsArray: Array<MapPointBounds> = Array(mapCircleList.size, { MapPointBounds() })
-        for(i in 0 until mapCircleList.size) {
-            mapView.addCircle(mapCircleList[i])
-            mapPointBoundsArray[i] = mapCircleList[i].bound
-        }
-        val padding = 50
-        val mapPointBounds = MapPointBounds(mapPointBoundsArray)
-        mapView.moveCamera(CameraUpdateFactory.newMapPointBounds(mapPointBounds, padding))
+        mapView.removeAllCircles()
     }
 
     private fun updateCircle() {
@@ -142,7 +113,6 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
 
     /**
      * DataBase 에 저장된 위치 값 마커로 표현하기
-     *
      */
     private fun updateMarker() {
         mapView.removeAllPOIItems()
@@ -161,13 +131,13 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
                 markerType = MapPOIItem.MarkerType.RedPin
             }
         }
-        Log.e("pois", pois[3].mapPoint.mapPointGeoCoord.latitude.toString())
         mapView.addPOIItems(pois.toTypedArray())
     }
 
     //////////// implements MapView.MapViewEventListener
     override fun onMapViewInitialized(mapView: MapView) {
         updateMarker()
+        updateCircle()
     }
 
     override fun onMapViewLongPressed(mapView: MapView, mapPoints: MapPoint) {
@@ -239,8 +209,12 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
                 else -> "error"
             }
 
-            resultAddress = JSONObject(address).getJSONArray("documents").getJSONObject(0).getJSONObject("address").getString("address_name")
-//            Log.e("resultAddress", resultAddress)
+            resultAddress = JSONObject(address)
+                    .getJSONArray("documents")
+                    .getJSONObject(0)
+                    .getJSONObject("address")
+                    .getString("address_name")
+
             GlobalScope.launch(Dispatchers.Main) {
                 completion(resultAddress)
             }
@@ -295,9 +269,9 @@ class MainActivity : AppCompatActivity(), MapView.MapViewEventListener, MapView.
                 .show()
     }
 
-    override fun onCalloutBalloonOfPOIItemTouched(mapView: MapView, mapPOIItem: MapPOIItem) {}
-    override fun onCalloutBalloonOfPOIItemTouched(mapView: MapView, mapPOIItem: MapPOIItem, calloutBalloonButtonType: MapPOIItem.CalloutBalloonButtonType) {}
-    override fun onDraggablePOIItemMoved(mapView: MapView, mapPOIItem: MapPOIItem, mapPoint: MapPoint) {}
+    override fun onCalloutBalloonOfPOIItemTouched(mapView: MapView, mapPOIItem: MapPOIItem) { /** do nothing **/}
+    override fun onCalloutBalloonOfPOIItemTouched(mapView: MapView, mapPOIItem: MapPOIItem, calloutBalloonButtonType: MapPOIItem.CalloutBalloonButtonType) { /** do nothing **/ }
+    override fun onDraggablePOIItemMoved(mapView: MapView, mapPOIItem: MapPOIItem, mapPoint: MapPoint) { /** do nothing **/ }
 
     override fun onCurrentLocationUpdate(p0: MapView?, p1: MapPoint?, p2: Float) {
         var latitude: Double = p1?.mapPointGeoCoord?.latitude ?: 0.0
